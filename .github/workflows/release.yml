@@ -58,7 +58,7 @@ jobs:
           name: dotnet-publish
           path: ${{ runner.temp }}/release
       - name: Zip artifacts
-        run: zip -r ${{ runner.temp }}/Adam-${{env.SemVer}}.zip ${{ runner.temp }}/release
+        run: cd ${{ runner.temp }}/release && zip -r ${{ runner.temp }}/Adam-${{env.SemVer}}.zip .
       - name: Create release
         uses: softprops/action-gh-release@v2.0.4
         if: ${{ !env.ACT }}
