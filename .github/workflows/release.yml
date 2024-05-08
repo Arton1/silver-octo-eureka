@@ -31,38 +31,37 @@ jobs:
       - name: Calculate version
         run: dotnet gitversion /output buildserver
       - name: Publish
-        run: dotnet publish ./WebApp.csproj --nologo --self-contained -r win-x64 -c Release /p:Version=${{env.GitVersion_AssemblySemVer}} -o ~/artifacts/Adam.Web
+        run: dotnet publish ./WebApp.csproj --nologo --self-contained -r win-x64 -c Release /p:Version=${{env.GitVersion_AssemblySemVer}} -o ${{ runner.temp }}/artifacts/Adam.Web
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: dotnet-publish
-          path: ~/artifacts
+          path: ${{ runner.temp }}/artifacts
           retention-days: 1
           if-no-files-found: error
       - name: SemVer
-        run: echo "SemVer=${{env.GitVersion_SemVer}}" >> "$GITHUB_OUTPUT"
+        run: echo "SemVer=1.2.3" >> "$GITHUB_OUTPUT"
+      - name: Echo SemVer
+        run: echo ${{ steps.SemVer.outputs.SemVer }}
   bundle-artifacts:
     runs-on: ubuntu-latest
     needs: [publish-dotnet-solution]
     env:
       SemVer: ${{needs.publish-dotnet-solution.outputs.SemVer}}
     steps:
+      - name: Echo SemVer
+        run: echo ${{env.SemVer}}
       - name: Download dotnet publish artifact
         uses: actions/download-artifact@v4
         with:
           name: dotnet-publish
-          path: ~/backend
-      - name: Bundle artifacts
-        run: |
-          cd ~
-          mkdir -p ./release
-          cp -r ./backend/* ./release
-          cd ./release && zip -r ~/Adam-${{env.SemVer}}.zip .
+          path: ${{ runner.temp }}/release
+      - name: Zip artifacts
+        run: zip -r ${{ runner.temp }}/Adam-${{env.SemVer}}.zip ${{ runner.temp }}/release
       - name: Create release
         uses: softprops/action-gh-release@v2.0.4
         if: ${{ !env.ACT }}
-#        working-directory: ~
         with:
-          files: ~/Adam-${{env.SemVer}}.zip
+          files: ${{ runner.temp }}/Adam-${{env.SemVer}}.zip
           fail_on_unmatched_files: true
 
